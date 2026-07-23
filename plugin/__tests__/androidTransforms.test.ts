@@ -239,6 +239,37 @@ describe('Android transforms', () => {
     expect(repeated.match(/include ':jpush-react-native'/g)).toHaveLength(1);
   });
 
+  it('should inject libs version catalog in settings.gradle when Huawei is enabled', () => {
+    const fixture = readFixture('android/settings.gradle.fixture');
+    const transformed = applyAndroidSettingsGradle(fixture, { huawei: { enabled: true } });
+    const repeated = applyAndroidSettingsGradle(transformed, { huawei: { enabled: true } });
+
+    expect(transformed).toContain('dependencyResolutionManagement');
+    expect(transformed).toContain('versionCatalogs');
+    expect(transformed).toContain('libs');
+    expect(transformed).toContain('libs.versions.toml');
+    // idempotent: second call must produce the same output
+    expect(repeated).toBe(transformed);
+  });
+
+  it('should not inject libs version catalog when Huawei is disabled', () => {
+    const fixture = readFixture('android/settings.gradle.fixture');
+    const transformed = applyAndroidSettingsGradle(fixture, { fcm: { enabled: true } });
+
+    expect(transformed).not.toContain('dependencyResolutionManagement');
+    expect(transformed).not.toContain('jpush-libs-version-catalog');
+  });
+
+  it('should remove libs version catalog from settings.gradle when Huawei is toggled off', () => {
+    const fixture = readFixture('android/settings.gradle.fixture');
+    const withHuawei = applyAndroidSettingsGradle(fixture, { huawei: { enabled: true } });
+    expect(withHuawei).toContain('dependencyResolutionManagement');
+
+    const withoutHuawei = applyAndroidSettingsGradle(withHuawei, undefined);
+    expect(withoutHuawei).not.toContain('dependencyResolutionManagement');
+    expect(withoutHuawei).not.toContain('jpush-libs-version-catalog');
+  });
+
   it('should add AndroidManifest metadata and keep it idempotent', () => {
     const application = {
       $: {

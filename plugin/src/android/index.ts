@@ -23,7 +23,7 @@ export function withAndroidConfig(
   config = withAndroidManifestConfig(config);
   config = withAndroidProjectBuildGradle(config, props);
   config = withAndroidAppBuildGradle(config, props);
-  config = withAndroidSettingsGradle(config);
+  config = withAndroidSettingsGradle(config, props);
   config = withAndroidGradleProperties(config, props);
 
   return config;
