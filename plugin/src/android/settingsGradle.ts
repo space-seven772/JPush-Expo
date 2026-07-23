@@ -19,16 +19,38 @@ include ':jcore-react-native'
 project(':jcore-react-native').projectDir = new File(rootProject.projectDir, '../node_modules/jcore-react-native/android')`;
 };
 
+const resolveReactNativeLibsTomlPath = (): string => {
+  try {
+    const resolveFn = (globalThis as { require?: { resolve?: (id: string) => string } }).require
+      ?.resolve;
+
+    if (typeof resolveFn !== 'function') {
+      return '../node_modules/react-native/gradle/libs.versions.toml';
+    }
+
+    const reactNativePackageJsonPath = resolveFn('react-native/package.json');
+    const reactNativeRoot = reactNativePackageJsonPath.replace(/[/\\]package\.json$/, '');
+
+    // Gradle 字符串里统一使用正斜杠，避免 Windows 路径分隔符导致解析问题
+    return `${reactNativeRoot}/gradle/libs.versions.toml`.replace(/\\/g, '/');
+  } catch {
+    // 回退到传统 node_modules 路径，保障极端场景可用
+    return '../node_modules/react-native/gradle/libs.versions.toml';
+  }
+};
+
 /**
  * 生成华为 AGConnect 所需的 libs version catalog 定义。
  * AGConnect 插件运行时调用 versionCatalogs.named("libs")，因此必须在
  * settings.gradle 中定义 libs catalog；仅华为通道启用时注入，避免污染其他场景。
  */
 const getLibsVersionCatalog = (): string => {
+  const libsTomlPath = resolveReactNativeLibsTomlPath();
+
   return `dependencyResolutionManagement {
     versionCatalogs {
         libs {
-            from(files("../gradle/libs.versions.toml"))
+            from(files("${libsTomlPath}"))
         }
     }
 }`;
@@ -69,7 +91,6 @@ export function withAndroidSettingsGradle(
   props: { vendorChannels?: VendorChannelConfig }
 ): ExpoConfig {
   return withSettingsGradle(config, (config) => {
-    console.log('\n[MX_JPush_Expo] 配置 Android settings.gradle ...');
     config.modResults.contents = applyAndroidSettingsGradle(
       config.modResults.contents,
       props?.vendorChannels
