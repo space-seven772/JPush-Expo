@@ -1,5 +1,5 @@
 {
-  "name": "mx-jpush-expo",
+  "name": "@r2wa/jpush-expo",
   "version": "1.3.0",
   "description": "Expo 集成极光推送（JPush）一体化解决方案，支持 iOS/Android 厂商通道",
   "main": "app.plugin.js",
